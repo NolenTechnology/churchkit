@@ -1,7 +1,7 @@
 ---
 import { getSettings, getCapabilities } from '../lib/api';
 import { env } from '../lib/env';
-import { logoWhite } from '../lib/logo';
+import { logoWhite, logoIcon } from '../lib/logo';
 import { cityRegion } from '../lib/service-times';
 
 const [settings, capabilities] = await Promise.all([
@@ -26,9 +26,22 @@ const social: [string, string][] = Object.entries(
 <footer class="footer">
   <div class="footer__inner container">
     <div class="footer__brand">
-      {logoSrc
-        ? <img src={logoSrc} alt={churchName} class="footer__logo" />
-        : <p class="footer__wordmark">{churchName}</p>}
+      {/*
+        logoIcon (plain mark, no baked-in text) pairs with the church's
+        real name as actual HTML, same as Nav.astro's header lockup --
+        text stays crisp at any size. logoSrc is the full stacked
+        icon+wordmark+tagline lockup; at footer height it reads as noise,
+        so it's the fallback only for a church with no dedicated icon
+        asset, not the default.
+      */}
+      {logoIcon
+        ? <>
+            <img src={logoIcon} alt="" class="footer__icon" />
+            <p class="footer__wordmark">{churchName}</p>
+          </>
+        : logoSrc
+          ? <img src={logoSrc} alt={churchName} class="footer__logo" />
+          : <p class="footer__wordmark">{churchName}</p>}
       {settings.tagline && <p class="footer__tagline">{settings.tagline}</p>}
       {(address || phone || email) && (
         <div class="footer__info">
@@ -81,10 +94,15 @@ const social: [string, string][] = Object.entries(
 <style>
   .footer { background: var(--brand); color: rgba(255, 255, 255, 0.75); margin-top: auto; }
   .footer__inner { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 48px; padding-top: 56px; padding-bottom: 48px; }
-  /* Matches Nav.astro's desktop icon size (.mast__icon) -- the footer logo
-     was stuck at Nav's *mobile* size on every breakpoint, so it read as
-     tiny next to the header's own logo above it. */
+  /* Fallback only -- see the template comment above. At any height that
+     fits a footer, the wordmark/tagline baked into this image reads as
+     noise; logoIcon + real text (below) is the actual default. */
   .footer__logo { height: 56px; width: auto; margin-bottom: 18px; }
+  /* logoIcon's source ink is dark (Nav.astro uses it as-is on a light
+     header background); brightness(0) invert(1) is the standard flat-icon
+     trick to force it white for this section's dark --brand background,
+     without needing a church to supply a second, white-ink icon file. */
+  .footer__icon { height: 44px; width: auto; margin-bottom: 10px; filter: brightness(0) invert(1); }
   .footer__wordmark { font-family: var(--font-heading); font-size: 28px; color: var(--white); margin-bottom: 12px; }
   .footer__tagline { font-family: var(--font-heading); font-size: 19px; font-style: italic; color: rgba(255, 255, 255, 0.65); line-height: 1.5; margin-bottom: 16px; }
   .footer__info { font-size: 14px; line-height: 1.9; color: rgba(255, 255, 255, 0.72); }
