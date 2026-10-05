@@ -81,7 +81,10 @@ const social: [string, string][] = Object.entries(
 <style>
   .footer { background: var(--brand); color: rgba(255, 255, 255, 0.75); margin-top: auto; }
   .footer__inner { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 48px; padding-top: 56px; padding-bottom: 48px; }
-  .footer__logo { height: 40px; width: auto; margin-bottom: 18px; }
+  /* Matches Nav.astro's desktop icon size (.mast__icon) -- the footer logo
+     was stuck at Nav's *mobile* size on every breakpoint, so it read as
+     tiny next to the header's own logo above it. */
+  .footer__logo { height: 56px; width: auto; margin-bottom: 18px; }
   .footer__wordmark { font-family: var(--font-heading); font-size: 28px; color: var(--white); margin-bottom: 12px; }
   .footer__tagline { font-family: var(--font-heading); font-size: 19px; font-style: italic; color: rgba(255, 255, 255, 0.65); line-height: 1.5; margin-bottom: 16px; }
   .footer__info { font-size: 14px; line-height: 1.9; color: rgba(255, 255, 255, 0.72); }
@@ -106,5 +109,6 @@ const social: [string, string][] = Object.entries(
     .footer__inner { grid-template-columns: 1fr 1fr; gap: 32px; }
     .footer__brand { grid-column: 1 / -1; }
     .footer__bottom-inner { justify-content: center; text-align: center; }
+    .footer__logo { height: 40px; }
   }
 </style>
