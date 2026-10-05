@@ -11,10 +11,11 @@
  * The Homepage Image's role differs by theme rather than being the same
  * side panel everywhere — classic keeps the 50/50 split; editorial and
  * visitor-first use it as a full-bleed backdrop (two different overlay
- * treatments); bold mirrors the split with a brand-tinted duotone; minimal
- * gives it a small, quiet inset. A theme with no image configured falls
- * back to its plain colored background exactly as before — none of this
- * invents a photo that was never uploaded.
+ * treatments); bold mirrors the split, shown at full color (just a light
+ * grayscale/contrast touch, no color overlay); minimal gives it a small,
+ * quiet inset. A theme with no image configured falls back to its plain
+ * colored background exactly as before — none of this invents a photo
+ * that was never uploaded.
  */
 interface Props {
   carouselSlides: any[];
@@ -41,7 +42,6 @@ const hasPhotoBg = !!heroImage && fullBleedThemes.has(theme);
   {heroImage && theme === 'bold' && (
     <div class="hero__side hero__side--bold">
       <img src={heroImage} alt="" style={`object-position: ${focalPosition}`} />
-      <div class="hero__duotone"></div>
     </div>
   )}
   {heroImage && theme === 'minimal' && (
@@ -184,7 +184,6 @@ const hasPhotoBg = !!heroImage && fullBleedThemes.has(theme);
   .hero--bold.hero--has-side .hero__left { width: 52%; }
   .hero__side--bold { order: -1; position: relative; width: 48%; flex-shrink: 0; overflow: hidden; }
   .hero__side--bold img { width: 100%; height: 100%; object-fit: cover; display: block; filter: grayscale(0.25) contrast(1.1); }
-  .hero__duotone { position: absolute; inset: 0; background: var(--brand); mix-blend-mode: multiply; opacity: 0.6; }
   .hero--bold.hero--has-side .hero__content { max-width: 560px; text-align: left; }
   .hero--bold:not(.hero--has-side) .hero__content { max-width: 760px; margin: 0 auto; text-align: center; }
   .hero--bold .hero__overlay { background: rgba(0,0,0,0.3); }
