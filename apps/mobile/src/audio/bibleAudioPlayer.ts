@@ -101,5 +101,9 @@ export async function resumeReading(): Promise<void> {
 
 export async function stopReading(): Promise<void> {
   clearEndListener();
+  // Nothing was ever set up (e.g. prev/next tapped before play, or an
+  // unmount racing a setup that failed) — there's no player to reset.
+  if (!setupPromise) return;
+  await setupPromise;
   await TrackPlayer.reset();
 }

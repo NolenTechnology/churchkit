@@ -86,7 +86,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     slug: m.expoSlug ?? brand.slug,
     scheme: required(m.scheme, 'scheme'),
     version: m.version ?? '1.0.0',
-    orientation: 'portrait',
+    orientation: 'default',
     userInterfaceStyle: 'light',
     newArchEnabled: false,
     icon: `${assetDir}/${brand.assets?.appIcon ?? 'assets/icon.png'}`,
