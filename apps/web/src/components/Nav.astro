@@ -159,10 +159,13 @@ const utilityLine = [worshipTime && `Sunday Worship ${worshipTime}`, location].f
 
   .mast { background: var(--surface); border-bottom: 1px solid var(--hdr-rule); position: sticky; top: 0; z-index: 100; }
   .mast__inner { height: var(--hdr-height); display: flex; align-items: center; justify-content: space-between; gap: 40px; }
-  .mast__logo { display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
-  .mast__logo img { height: 64px; width: auto; }
+  .mast__logo { display: flex; align-items: center; gap: 14px; min-width: 0; }
+  .mast__logo img { height: 64px; width: auto; flex-shrink: 0; }
   .mast__logo img.mast__icon { height: 56px; width: auto; }
-  .mast__wordmark { font-family: var(--font-heading); font-size: 26px; color: var(--brand); white-space: nowrap; }
+  .mast__wordmark {
+    font-family: var(--font-heading); font-size: 26px; color: var(--brand);
+    white-space: nowrap; min-width: 0; overflow: hidden; text-overflow: ellipsis;
+  }
 
   .mast__nav { display: flex; align-items: center; gap: 30px; }
   .mast__link {
@@ -224,7 +227,7 @@ const utilityLine = [worshipTime && `Sunday Worship ${worshipTime}`, location].f
   .drop__link { padding: 11px 14px; color: rgba(255, 255, 255, 0.86); font-size: 14px; font-weight: 500; white-space: nowrap; text-decoration: none; }
   .drop__link:hover, .drop__link--active { background: rgba(255, 255, 255, 0.1); color: #fff; }
 
-  .mast__mobile-actions { display: none; align-items: center; gap: 10px; }
+  .mast__mobile-actions { display: none; align-items: center; gap: 10px; flex-shrink: 0; }
   .burger {
     width: 44px; height: 44px;
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
