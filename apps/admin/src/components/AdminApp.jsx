@@ -2,6 +2,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { listFontPresets } from "@churchkit/config/font-presets";
 import { buildNav } from "@churchkit/config/nav";
 import { listHomeLayouts } from "@churchkit/config/home-layouts";
+import { parseBibleReference } from "@churchkit/config/bible";
+import { renderSermonNotesDocument } from "@churchkit/config/sermon-notes";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 // No default. A guessed API base would point one church's admin panel at
@@ -342,7 +344,7 @@ function FocalPointPicker({ src, x, y, onChange }) {
 }
 
 // ─── WYSIWYG Editor ───────────────────────────────────────────────────────────
-function WYSIWYGEditor({ value, onChange, sermonsMode, toast }) {
+function WYSIWYGEditor({ value, onChange, sermonsMode, caps, toast }) {
   const editorRef = useRef();
   const internalValue = useRef(value);
   const fileInputRef = useRef();
@@ -409,26 +411,43 @@ function WYSIWYGEditor({ value, onChange, sermonsMode, toast }) {
     onChange(editorRef.current.innerHTML);
   }
 
+  function escAttr(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  // The real answer is the span's own text — visible here in the editor so
+  // it can be read and edited normally. It's only masked to a same-length
+  // blank, and only revealed one tap at a time, when the note is actually
+  // viewed (see packages/config/src/sermon-notes.mjs). Storing an empty
+  // input for the reader to guess into, which is what this used to do,
+  // isn't a "hidden real value" at all.
   function insertFillinBlank() {
-    editorRef.current.focus();
-    const node = document.createElement("input");
-    node.className = "blank-field";
-    node.placeholder = "answer";
-    node.style.cssText = "border:none;border-bottom:2px solid var(--admin-brand);outline:none;width:120px;background:transparent;font-size:inherit;font-family:inherit;padding:2px 4px;";
-    const sel = window.getSelection();
-    if (sel.rangeCount) {
-      const range = sel.getRangeAt(0);
-      range.insertNode(node);
-    }
+    const answer = prompt("Answer (hidden from readers until tapped):");
+    if (!answer) return;
+    exec("insertHTML", `<span class="sn-blank" data-answer="${escAttr(answer)}">${escAttr(answer)}</span>`);
     onChange(editorRef.current.innerHTML);
   }
 
+  // Only the reference and lookup params are stored — never the verse
+  // text itself. The text is fetched live from /api/bible/text every time
+  // a reader taps the reference, so it can't go stale and never needs
+  // re-typing if a translation is corrected. An unrecognized reference
+  // inserts nothing rather than guessing at one — see CLAUDE.md on why a
+  // wrong fallback is worse than none.
   function insertScriptureBlock() {
-    const ref = prompt("Scripture reference (e.g. John 3:16):");
+    const ref = prompt("Scripture reference (e.g. John 3:16 or John 3:16-18):");
     if (!ref) return;
-    const text = prompt("Verse text:");
-    if (!text) return;
-    exec("insertHTML", `<blockquote style="border-left:4px solid var(--admin-accent);padding:12px 20px;margin:16px 0;background:#faf8f0;font-family:Source Serif 4,serif;font-style:italic;color:#444"><strong style="font-style:normal;color:var(--admin-brand);font-family:DM Sans,sans-serif;font-size:13px">${ref}</strong><br><br>${text}</blockquote>`);
+    const parsed = parseBibleReference(ref);
+    if (!parsed) {
+      if (toast) toast("Could not recognize that reference", "error"); else alert("Could not recognize that reference");
+      return;
+    }
+    const { book, chapter, startVerse, endVerse } = parsed;
+    const translation = "NIV";
+    exec(
+      "insertHTML",
+      `<a href="#" class="sn-scripture" data-ref="${escAttr(ref)}" data-translation="${translation}" data-usfm="${book.usfm}" data-chapter="${chapter}" data-start-verse="${startVerse ?? ""}" data-end-verse="${endVerse ?? ""}">📖 ${escAttr(ref)}</a>`
+    );
     onChange(editorRef.current.innerHTML);
   }
 
@@ -474,11 +493,11 @@ function WYSIWYGEditor({ value, onChange, sermonsMode, toast }) {
     }
   }
 
-  const toolBtn = (label, action, tip) => (
-    <button title={tip} onClick={action} style={{
-      border: "1px solid #ddd", background: "#fff", padding: "5px 10px",
-      cursor: "pointer", borderRadius: 5, fontFamily: "DM Sans, sans-serif",
-      fontSize: 12, color: "#333",
+  const toolBtn = (label, action, tip, disabled) => (
+    <button title={tip} onClick={action} disabled={disabled} style={{
+      border: "1px solid #ddd", background: disabled ? "#f5f5f5" : "#fff", padding: "5px 10px",
+      cursor: disabled ? "not-allowed" : "pointer", borderRadius: 5, fontFamily: "DM Sans, sans-serif",
+      fontSize: 12, color: disabled ? "#aaa" : "#333",
     }}>{label}</button>
   );
 
@@ -555,8 +574,13 @@ function WYSIWYGEditor({ value, onChange, sermonsMode, toast }) {
         {toolBtn(uploadingImage ? "Uploading…" : "🖼 Image", openImagePicker, "Insert image")}
         <input ref={fileInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={e => handleImageUpload(e.target.files[0])} />
         {sermonsMode && <>
-          {toolBtn("Fill in Blank", insertFillinBlank, "Insert fill-in-the-blank field")}
-          {toolBtn("📖 Scripture", insertScriptureBlock, "Insert scripture block")}
+          {toolBtn("Fill in Blank", insertFillinBlank, "Insert a hidden-answer blank readers tap to reveal")}
+          {toolBtn(
+            "📖 Scripture",
+            insertScriptureBlock,
+            caps?.bible ? "Insert a tappable scripture reference" : "Set BIBLE_API_KEY or BIBLE_BRAIN_API_KEY to enable scripture lookups",
+            !caps?.bible
+          )}
           {toolBtn("★ Main Point", insertMainPoint, "Insert main point block")}
         </>}
       </div>
@@ -1344,7 +1368,7 @@ function PagesPage({ toast, siteUrl, caps }) {
 // ════════════════════════════════════════════════════════════════════════════════
 // PAGE: Sermon Notes
 // ════════════════════════════════════════════════════════════════════════════════
-function SermonNotesPage({ toast }) {
+function SermonNotesPage({ toast, caps }) {
   const [sermons, setSermons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null);
@@ -1394,7 +1418,7 @@ function SermonNotesPage({ toast }) {
             </label>
             <button onClick={save} style={btnPrimary} disabled={saving}>{saving ? "Saving…" : "Save Notes"}</button>
           </div>
-          {notesLoading ? <Loading /> : <WYSIWYGEditor value={html} onChange={setHtml} sermonsMode toast={toast} />}
+          {notesLoading ? <Loading /> : <WYSIWYGEditor value={html} onChange={setHtml} sermonsMode caps={caps} toast={toast} />}
         </div>
         <div>
           <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 13, fontWeight: 600, color: "#888", marginBottom: 10, textTransform: "uppercase", letterSpacing: 1 }}>Phone Preview</div>
@@ -1407,8 +1431,12 @@ function SermonNotesPage({ toast }) {
                 <div style={{ fontFamily: "Playfair Display, serif", fontSize: 13, color: "#fff" }}>{editing.title}</div>
                 <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 11, color: "rgba(255,255,255,0.6)", marginTop: 2 }}>{fmtDate(editing.date)}</div>
               </div>
-              <div style={{ padding: 12, overflowY: "auto", height: "calc(100% - 56px)", fontSize: 11, lineHeight: 1.6 }}
-                dangerouslySetInnerHTML={{ __html: html }} />
+              <iframe
+                title="Sermon notes preview"
+                sandbox="allow-scripts"
+                srcDoc={renderSermonNotesDocument(html, { apiBase: API })}
+                style={{ border: "none", width: "100%", height: "calc(100% - 56px)" }}
+              />
             </div>
           </div>
         </div>

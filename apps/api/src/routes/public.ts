@@ -1,6 +1,7 @@
 import type { Env } from '../types';
 import { json, err, CORS_HEADERS } from '../lib/response';
 import { capabilities } from '../lib/capabilities';
+import { renderSermonNotesDocument } from '@churchkit/config/sermon-notes';
 import {
 	getSettings,
 	getFeaturedEvent,
@@ -70,23 +71,12 @@ export async function handleGetNotes(planId: string, env: Env): Promise<Response
 	// The stored html is a bare content fragment from the admin's WYSIWYG
 	// editor (no <html>/<head>, no font styling of its own — the editor and
 	// its "Phone Preview" only look right there because they set the font on
-	// their own wrapping element). Serving it as-is with no viewport meta
-	// left the app's WebView assuming a desktop-width layout and shrinking
-	// the whole page to fit the screen, so text rendered far smaller than in
-	// either admin preview. Wrap it in a real document with a mobile
-	// viewport and the same font the editor uses.
-	const document = `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<style>
-  body { margin: 0; padding: 16px; font-family: Georgia, 'Times New Roman', serif; font-size: 18px; line-height: 1.6; color: #222; }
-  img { max-width: 100%; height: auto; }
-</style>
-</head>
-<body>${row.html}</body>
-</html>`;
+	// their own wrapping element). renderSermonNotesDocument wraps it in a
+	// real document with a mobile viewport, the editor's font, and the
+	// hidden-blank/scripture-overlay behavior those two authoring tools
+	// produce — shared with apps/admin's Phone Preview so both render the
+	// same thing. See packages/config/src/sermon-notes.mjs.
+	const document = renderSermonNotesDocument(row.html);
 
 	return new Response(document, {
 		headers: {
