@@ -2,7 +2,7 @@ import type { Env } from '../types';
 import { json, err, notConfigured } from '../lib/response';
 import { pcoFetch } from '../lib/pco';
 import { sendPush } from '../lib/push';
-import { getSettings, getMergedSermons, ensureDeviceTokensColumns } from '../lib/data';
+import { getSettings, getMergedSermons, getSermonsForNotesPrep, ensureDeviceTokensColumns } from '../lib/data';
 import { runHealthChecks } from '../lib/health';
 import { getChurchDetails } from '../lib/template';
 import { changePassword } from '../platform/localAuth';
@@ -65,7 +65,7 @@ export async function handleAdmin(
 
 	// ── Sermons ────────────────────────────────────────────────
 	if (path === '/api/admin/sermons' && method === 'GET') {
-		const sermons = await getMergedSermons(env);
+		const sermons = getSermonsForNotesPrep(await getMergedSermons(env));
 		const { results } = await env.DB.prepare('SELECT pco_plan_id, published FROM sermon_notes').all();
 		const notesMap = new Map(results.map((n: any) => [n.pco_plan_id, n.published]));
 		return json({

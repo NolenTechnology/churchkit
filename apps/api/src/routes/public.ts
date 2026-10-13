@@ -56,7 +56,8 @@ export async function handleSermons(env: Env, limit?: number): Promise<Response>
 	// not media. Leaving them in put them at the top of this newest-first
 	// list, so a client asking for the first N got upcoming, video-less
 	// plans and — once it filtered for something playable — almost nothing.
-	// /api/admin/sermons still sees the full set.
+	// /api/admin/sermons windows this differently instead (see
+	// getSermonsForNotesPrep) rather than seeing the full set.
 	const sermons = getPastSermons(await getMergedSermons(env));
 	return json({ data: limit ? sermons.slice(0, limit) : sermons }, 200, 120);
 }

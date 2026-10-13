@@ -394,6 +394,24 @@ export function getLatestSermonWithVideo(sermons: any[]): any {
 	return pastSermons.find(s => s.youtube_url) || null;
 }
 
+// The Sermon Notes admin page's window: two months back (there's still
+// notes to finish for a recent sermon) to one month ahead (far enough to
+// prep, not so far it's mostly plans nobody's ready to write for yet).
+// getMergedSermons's full set runs back for months and includes every
+// future-scheduled plan — unwindowed, that buries this week's sermon in a
+// list an admin has to scroll past to find it.
+export function getSermonsForNotesPrep(sermons: any[]): any[] {
+	const now = Date.now();
+	const start = new Date(now);
+	start.setMonth(start.getMonth() - 2);
+	const end = new Date(now);
+	end.setMonth(end.getMonth() + 1);
+	return sermons.filter(s => {
+		const t = new Date(s.date).getTime();
+		return t >= start.getTime() && t <= end.getTime();
+	});
+}
+
 /**
  * `app_version` was added to schema.sql after some deployments' D1
  * databases already existed with the older device_tokens shape — same
