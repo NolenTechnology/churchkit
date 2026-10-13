@@ -6,10 +6,12 @@
  *
  *   <span class="sn-blank" data-answer="grace">grace</span>
  *     A fill-in-the-blank. The real word is always present in the stored
- *     HTML — never a second, church-authored "fallback" value — and is
- *     only masked here, at render time, to a run of underscores the same
- *     length. Each blank reveals independently on tap; there is no
- *     "reveal all" and no ordering between blanks.
+ *     HTML — never a second, church-authored "fallback" value — and at
+ *     render time becomes a real text input a reader types their own
+ *     guess into, sized to the answer's length, plus a separate reveal
+ *     toggle that shows the stored answer alongside it without touching
+ *     whatever the reader typed. Each blank reveals independently; there
+ *     is no "reveal all" and no ordering between blanks.
  *
  *   <a class="sn-scripture" data-translation="NIV" data-usfm="JHN"
  *      data-chapter="3" data-start-verse="16" data-end-verse="16">
@@ -31,8 +33,11 @@ import { BIBLE_COPYRIGHT } from './bible.mjs';
 const STYLE = `
   body { margin: 0; padding: 16px; font-family: Georgia, 'Times New Roman', serif; font-size: 18px; line-height: 1.6; color: #222; }
   img { max-width: 100%; height: auto; }
-  .sn-blank { display: inline-block; border-bottom: 2px solid #2d4a2b; cursor: pointer; user-select: none; }
-  .sn-blank.revealed { border-bottom-style: dotted; cursor: default; user-select: text; }
+  .sn-blank-wrap { display: inline-flex; align-items: baseline; gap: 4px; }
+  .sn-blank-input { border: none; border-bottom: 2px solid #2d4a2b; outline: none; background: transparent; font: inherit; color: inherit; padding: 2px 4px; }
+  .sn-blank-reveal { border: none; background: none; cursor: pointer; font-size: 0.8em; padding: 0 2px; line-height: 1; opacity: 0.7; }
+  .sn-blank-answer { font-style: italic; font-weight: 600; color: #2d4a2b; }
+  .sn-blank-answer[hidden] { display: none; }
   .sn-scripture { display: inline-block; color: #2d4a2b; background: #f0f5f0; border: 1px solid #cfe0cf; border-radius: 12px; padding: 2px 10px; font-family: 'DM Sans', Georgia, sans-serif; font-size: 15px; text-decoration: none; cursor: pointer; }
   .sn-modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; padding: 20px; z-index: 1000; }
   .sn-modal-backdrop.open { display: flex; }
@@ -45,24 +50,42 @@ const STYLE = `
 
 // __API_BASE__ and __COPYRIGHT_JSON__ below are replaced with JSON-encoded
 // values by renderSermonNotesDocument, not left as bare identifiers.
-//
-// Masks every letter/digit with "_" so the blank reads at the real word's
-// length, while leaving spaces and punctuation alone so multi-word answers
-// still show their word breaks.
 const SCRIPT = `
 (function () {
-  function mask(text) {
-    return text.replace(/[A-Za-z0-9]/g, '_');
-  }
-
   document.querySelectorAll('.sn-blank').forEach(function (el) {
     var answer = el.getAttribute('data-answer') || el.textContent;
-    el.setAttribute('data-answer', answer);
-    el.textContent = mask(answer);
-    el.addEventListener('click', function () {
-      var revealed = el.classList.toggle('revealed');
-      el.textContent = revealed ? answer : mask(answer);
+
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'sn-blank-input';
+    input.placeholder = '…';
+    input.size = Math.max(3, answer.length);
+    input.autocapitalize = 'off';
+    input.autocomplete = 'off';
+    input.spellcheck = false;
+
+    var reveal = document.createElement('button');
+    reveal.type = 'button';
+    reveal.className = 'sn-blank-reveal';
+    reveal.textContent = '👁';
+    reveal.setAttribute('aria-label', 'Reveal answer');
+
+    var answerEl = document.createElement('span');
+    answerEl.className = 'sn-blank-answer';
+    answerEl.hidden = true;
+    answerEl.textContent = answer;
+
+    reveal.addEventListener('click', function () {
+      answerEl.hidden = !answerEl.hidden;
     });
+
+    var wrap = document.createElement('span');
+    wrap.className = 'sn-blank-wrap';
+    wrap.appendChild(input);
+    wrap.appendChild(reveal);
+    wrap.appendChild(answerEl);
+
+    el.replaceWith(wrap);
   });
 
   var backdrop = document.createElement('div');
