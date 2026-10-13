@@ -411,8 +411,29 @@ function WYSIWYGEditor({ value, onChange, sermonsMode, caps, toast }) {
     onChange(editorRef.current.innerHTML);
   }
 
-  function escAttr(s) {
-    return String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  // Chrome's execCommand('insertHTML') silently strips class and data-*
+  // attributes from the HTML it's given — proven by reproducing it
+  // directly: a <span class="sn-blank" data-answer="…"> survives the round
+  // trip as a bare <span style="…"> with neither attribute, because
+  // execCommand runs inserted markup through its own formatting-only
+  // sanitizer rather than inserting it verbatim. inline style and
+  // attributes like href/src pass through fine (that's why the old
+  // <input class="blank-field"> and image insertion never hit this), but
+  // sn-blank and sn-scripture both depend on class/data-* surviving, so
+  // they build the node directly and place it with Range/Selection
+  // instead — the same approach the original <input> insertion already
+  // used, for the same reason.
+  function insertNodeAtSelection(node) {
+    editorRef.current.focus();
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0 || !editorRef.current.contains(sel.anchorNode)) return;
+    const range = sel.getRangeAt(0);
+    range.deleteContents();
+    range.insertNode(node);
+    range.setStartAfter(node);
+    range.setEndAfter(node);
+    sel.removeAllRanges();
+    sel.addRange(range);
   }
 
   // The real answer is the span's own text — visible here in the editor so
@@ -424,7 +445,11 @@ function WYSIWYGEditor({ value, onChange, sermonsMode, caps, toast }) {
   function insertFillinBlank() {
     const answer = prompt("Answer (hidden from readers until tapped):");
     if (!answer) return;
-    exec("insertHTML", `<span class="sn-blank" data-answer="${escAttr(answer)}">${escAttr(answer)}</span>`);
+    const span = document.createElement("span");
+    span.className = "sn-blank";
+    span.setAttribute("data-answer", answer);
+    span.textContent = answer;
+    insertNodeAtSelection(span);
     onChange(editorRef.current.innerHTML);
   }
 
@@ -444,10 +469,17 @@ function WYSIWYGEditor({ value, onChange, sermonsMode, caps, toast }) {
     }
     const { book, chapter, startVerse, endVerse } = parsed;
     const translation = "NIV";
-    exec(
-      "insertHTML",
-      `<a href="#" class="sn-scripture" data-ref="${escAttr(ref)}" data-translation="${translation}" data-usfm="${book.usfm}" data-chapter="${chapter}" data-start-verse="${startVerse ?? ""}" data-end-verse="${endVerse ?? ""}">📖 ${escAttr(ref)}</a>`
-    );
+    const link = document.createElement("a");
+    link.href = "#";
+    link.className = "sn-scripture";
+    link.setAttribute("data-ref", ref);
+    link.setAttribute("data-translation", translation);
+    link.setAttribute("data-usfm", book.usfm);
+    link.setAttribute("data-chapter", String(chapter));
+    link.setAttribute("data-start-verse", startVerse != null ? String(startVerse) : "");
+    link.setAttribute("data-end-verse", endVerse != null ? String(endVerse) : "");
+    link.textContent = `📖 ${ref}`;
+    insertNodeAtSelection(link);
     onChange(editorRef.current.innerHTML);
   }
 
