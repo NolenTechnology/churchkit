@@ -14,6 +14,7 @@
     "brand": "node ../../packages/brand/src/generate.mjs --brand $npm_config_brand --out src/generated"
   },
   "dependencies": {
+    "@churchkit/config": "*",
     "@expo-google-fonts/cormorant-garamond": "^0.2.3",
     "@expo-google-fonts/roboto": "^0.2.3",
     "@expo/vector-icons": "^14.0.0",

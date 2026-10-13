@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseTitleDate, sortByDate, churchCenterEventUrl } from '../src/lib/data';
+import { parseTitleDate, sortByDate, churchCenterEventUrl, getSermonsForNotesPrep } from '../src/lib/data';
 import type { Env } from '../src/types';
 
 /** Minimal D1 stand-in returning one settings row. */
@@ -57,5 +57,25 @@ describe('sortByDate', () => {
 			{ name: 'earlier', starts_at: '2026-01-01T10:00:00Z' },
 		]);
 		expect(sorted.map((e) => e.name)).toEqual(['earlier', 'later']);
+	});
+});
+
+describe('getSermonsForNotesPrep', () => {
+	const daysAgo = (n: number) => new Date(Date.now() - n * 86400000).toISOString();
+	const daysAhead = (n: number) => new Date(Date.now() + n * 86400000).toISOString();
+
+	it('keeps sermons within two months back and one month ahead', () => {
+		const sermons = [
+			{ id: 'too-old', date: daysAgo(75) },
+			{ id: 'in-window-past', date: daysAgo(10) },
+			{ id: 'today', date: daysAgo(0) },
+			{ id: 'in-window-future', date: daysAhead(10) },
+			{ id: 'too-future', date: daysAhead(45) },
+		];
+		expect(getSermonsForNotesPrep(sermons).map(s => s.id)).toEqual([
+			'in-window-past',
+			'today',
+			'in-window-future',
+		]);
 	});
 });

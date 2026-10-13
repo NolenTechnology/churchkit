@@ -21,6 +21,14 @@
     "./home-layouts": {
       "types": "./src/home-layouts.d.ts",
       "default": "./src/home-layouts.mjs"
+    },
+    "./bible": {
+      "types": "./src/bible.d.ts",
+      "default": "./src/bible.mjs"
+    },
+    "./sermon-notes": {
+      "types": "./src/sermon-notes.d.ts",
+      "default": "./src/sermon-notes.mjs"
     }
   }
 }

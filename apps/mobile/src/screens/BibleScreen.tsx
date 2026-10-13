@@ -19,7 +19,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { State, usePlaybackState } from 'react-native-track-player';
 import { playReading, pauseReading, resumeReading, stopReading, setSkipHandlers } from '../audio/bibleAudioPlayer';
 import { fetchBibleTextFromApi } from '../api/client';
-import { BIBLE_COPYRIGHT } from '../constants/bibleCopyright';
+import { BIBLE_OT_BOOKS as OT_BOOKS, BIBLE_NT_BOOKS as NT_BOOKS, BIBLE_TRANSLATIONS as TRANSLATIONS, BIBLE_COPYRIGHT } from '@churchkit/config/bible';
 import { YEAR_1_PLAN, YEAR_2_PLAN, type DayPlan } from '../data/readingPlan.generated';
 import { Colors, Fonts, FontSizes, Spacing, Radius, Shadow } from '../constants/theme';
 import { SectionLabel } from '../components/shared';
@@ -28,19 +28,9 @@ import { SectionLabel } from '../components/shared';
 // All translation text comes from the worker, which prefers Bible Brain and
 // falls back to API.Bible per-translation when Bible Brain doesn't carry it
 // — see the API's fetchPassageText. Audio (ESV only) is separate;
-// see bibleAudioPlayer.ts.
-
-const TRANSLATIONS: { label: string; name: string }[] = [
-  { label: 'ASV', name: 'American Standard Version' },
-  { label: 'ESV', name: 'English Standard Version' },
-  { label: 'NIV', name: 'New International Version' },
-  { label: 'NLT', name: 'New Living Translation' },
-  { label: 'CSB', name: 'Christian Standard Bible' },
-  { label: 'KJV', name: 'King James Version' },
-  { label: 'RVA', name: 'Reina-Valera Antigua' },
-  { label: 'NKJV', name: 'New King James Version' },
-  { label: 'NVI', name: 'Nueva Versión Internacional' },
-];
+// see bibleAudioPlayer.ts. The book list, translation list and copyright
+// notices live in @churchkit/config/bible, shared with apps/admin's
+// sermon-notes scripture picker — see that package for why.
 
 type TranslationLabel = string;
 const TRANSLATION_KEY = 'bible_translation';
@@ -279,78 +269,8 @@ function BibleReaderModal({ reading, translation, onClose }: ReaderProps) {
 }
 
 // ── Bible Launcher Modal ──────────────────────────────────────────────────────
-
-const OT_BOOKS: Book[] = [
-  { name: 'Genesis', usfm: 'GEN', chapters: 50 },
-  { name: 'Exodus', usfm: 'EXO', chapters: 40 },
-  { name: 'Leviticus', usfm: 'LEV', chapters: 27 },
-  { name: 'Numbers', usfm: 'NUM', chapters: 36 },
-  { name: 'Deuteronomy', usfm: 'DEU', chapters: 34 },
-  { name: 'Joshua', usfm: 'JOS', chapters: 24 },
-  { name: 'Judges', usfm: 'JDG', chapters: 21 },
-  { name: 'Ruth', usfm: 'RUT', chapters: 4 },
-  { name: '1 Samuel', usfm: '1SA', chapters: 31 },
-  { name: '2 Samuel', usfm: '2SA', chapters: 24 },
-  { name: '1 Kings', usfm: '1KI', chapters: 22 },
-  { name: '2 Kings', usfm: '2KI', chapters: 25 },
-  { name: '1 Chronicles', usfm: '1CH', chapters: 29 },
-  { name: '2 Chronicles', usfm: '2CH', chapters: 36 },
-  { name: 'Ezra', usfm: 'EZR', chapters: 10 },
-  { name: 'Nehemiah', usfm: 'NEH', chapters: 13 },
-  { name: 'Esther', usfm: 'EST', chapters: 10 },
-  { name: 'Job', usfm: 'JOB', chapters: 42 },
-  { name: 'Psalms', usfm: 'PSA', chapters: 150 },
-  { name: 'Proverbs', usfm: 'PRO', chapters: 31 },
-  { name: 'Ecclesiastes', usfm: 'ECC', chapters: 12 },
-  { name: 'Song of Solomon', usfm: 'SNG', chapters: 8 },
-  { name: 'Isaiah', usfm: 'ISA', chapters: 66 },
-  { name: 'Jeremiah', usfm: 'JER', chapters: 52 },
-  { name: 'Lamentations', usfm: 'LAM', chapters: 5 },
-  { name: 'Ezekiel', usfm: 'EZK', chapters: 48 },
-  { name: 'Daniel', usfm: 'DAN', chapters: 12 },
-  { name: 'Hosea', usfm: 'HOS', chapters: 14 },
-  { name: 'Joel', usfm: 'JOL', chapters: 3 },
-  { name: 'Amos', usfm: 'AMO', chapters: 9 },
-  { name: 'Obadiah', usfm: 'OBA', chapters: 1 },
-  { name: 'Jonah', usfm: 'JON', chapters: 4 },
-  { name: 'Micah', usfm: 'MIC', chapters: 7 },
-  { name: 'Nahum', usfm: 'NAM', chapters: 3 },
-  { name: 'Habakkuk', usfm: 'HAB', chapters: 3 },
-  { name: 'Zephaniah', usfm: 'ZEP', chapters: 3 },
-  { name: 'Haggai', usfm: 'HAG', chapters: 2 },
-  { name: 'Zechariah', usfm: 'ZEC', chapters: 14 },
-  { name: 'Malachi', usfm: 'MAL', chapters: 4 },
-];
-
-const NT_BOOKS: Book[] = [
-  { name: 'Matthew', usfm: 'MAT', chapters: 28 },
-  { name: 'Mark', usfm: 'MRK', chapters: 16 },
-  { name: 'Luke', usfm: 'LUK', chapters: 24 },
-  { name: 'John', usfm: 'JHN', chapters: 21 },
-  { name: 'Acts', usfm: 'ACT', chapters: 28 },
-  { name: 'Romans', usfm: 'ROM', chapters: 16 },
-  { name: '1 Corinthians', usfm: '1CO', chapters: 16 },
-  { name: '2 Corinthians', usfm: '2CO', chapters: 13 },
-  { name: 'Galatians', usfm: 'GAL', chapters: 6 },
-  { name: 'Ephesians', usfm: 'EPH', chapters: 6 },
-  { name: 'Philippians', usfm: 'PHP', chapters: 4 },
-  { name: 'Colossians', usfm: 'COL', chapters: 4 },
-  { name: '1 Thessalonians', usfm: '1TH', chapters: 5 },
-  { name: '2 Thessalonians', usfm: '2TH', chapters: 3 },
-  { name: '1 Timothy', usfm: '1TI', chapters: 6 },
-  { name: '2 Timothy', usfm: '2TI', chapters: 4 },
-  { name: 'Titus', usfm: 'TIT', chapters: 3 },
-  { name: 'Philemon', usfm: 'PHM', chapters: 1 },
-  { name: 'Hebrews', usfm: 'HEB', chapters: 13 },
-  { name: 'James', usfm: 'JAS', chapters: 5 },
-  { name: '1 Peter', usfm: '1PE', chapters: 5 },
-  { name: '2 Peter', usfm: '2PE', chapters: 3 },
-  { name: '1 John', usfm: '1JN', chapters: 5 },
-  { name: '2 John', usfm: '2JN', chapters: 1 },
-  { name: '3 John', usfm: '3JN', chapters: 1 },
-  { name: 'Jude', usfm: 'JUD', chapters: 1 },
-  { name: 'Revelation', usfm: 'REV', chapters: 22 },
-];
+// OT_BOOKS/NT_BOOKS imported above from @churchkit/config/bible, shared
+// with apps/admin's sermon-notes scripture picker.
 
 function BibleLauncherModal({ visible, onClose, onSelect }: {
   visible: boolean;
